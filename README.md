@@ -84,6 +84,23 @@ Example JSON fields:
 
 That makes it safe to use in shell pipelines, bots, and agent tools.
 
+## Automation Summary
+
+| Command | Reads from | Default stdout | `--json` stdout | stderr on failure | Writes files |
+| --- | --- | --- | --- | --- | --- |
+| `html2md fetch <url>` | URL argument | Markdown | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
+| `html2md convert --stdin` | stdin HTML | Markdown | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
+| `html2md doctor` | nothing | Readiness text | One JSON object | Plain error line if command fails | Never |
+
+### Output Destination Rules
+
+- if neither `--out` nor `--out-dir` is given, final output is written to stdout
+- if `--out FILE` is given, final output is written only to that file
+- if `--out-dir DIR` is given, final output is written only to a deterministic file in that directory
+- in plain Markdown mode, writing to disk leaves stdout empty on success
+- in `--json` mode, writing to disk still prints one JSON object to stdout and includes `path`
+- normal successful runs do not print log noise to stderr
+
 ## Command Contract
 
 ### `html2md fetch <url>`
