@@ -104,6 +104,29 @@ def test_out_dir_uses_deterministic_filename(
     assert output_path.read_text(encoding="utf-8") == "# Example\n\nHello world.\n"
 
 
+def test_json_out_dir_writes_file_and_prints_json(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "extract_from_url", lambda url: sample_result())
+
+    exit_code = cli.main(
+        ["fetch", "https://example.com/start", "--json", "--out-dir", str(tmp_path)]
+    )
+
+    captured = capsys.readouterr()
+    output_path = tmp_path / "example-com-posts-hello-world.json"
+    payload = json.loads(captured.out)
+    assert exit_code == 0
+    assert captured.err == ""
+    assert output_path.exists()
+    assert json.loads(output_path.read_text(encoding="utf-8")) == payload
+    assert payload["ok"] is True
+    assert payload["path"] == str(output_path.resolve())
+    assert payload["markdown"] == "# Example\n\nHello world."
+
+
 def test_failure_prints_clean_stderr_and_non_zero(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],

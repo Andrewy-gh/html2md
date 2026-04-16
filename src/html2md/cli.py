@@ -101,7 +101,8 @@ def emit_result(result: ExtractResult, args: argparse.Namespace) -> int:
 
     if destination:
         write_text(destination, content)
-    else:
+
+    if args.json or destination is None:
         sys.stdout.write(content)
 
     return 0
