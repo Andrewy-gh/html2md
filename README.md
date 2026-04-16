@@ -30,6 +30,8 @@ uv run html2md fetch https://example.com --out article.md
 uv run html2md fetch https://example.com --out-dir output/
 ```
 
+Use `fetch` when you want the tool to retrieve a live page and clean it up like article content.
+
 ### Convert raw HTML from stdin
 
 ```bash
@@ -38,6 +40,8 @@ cat page.html | uv run html2md convert --stdin --frontmatter
 cat page.html | uv run html2md convert --stdin --json
 cat page.html | uv run html2md convert --stdin --out-dir output/
 ```
+
+Use `convert --stdin` when you already have HTML and want a terminal-friendly Markdown conversion without temp files.
 
 ### Doctor
 
@@ -80,6 +84,36 @@ Example JSON fields:
 
 That makes it safe to use in shell pipelines, bots, and agent tools.
 
+## Command Contract
+
+### `html2md fetch <url>`
+
+- input: one URL argument
+- output: Markdown by default, or one JSON object with `--json`
+- metadata: includes `source_url`, `final_url`, and any metadata trafilatura can extract
+- failure mode: exits non-zero, prints a plain error to stderr, or prints a single error JSON object with `--json`
+
+### `html2md convert --stdin`
+
+- input: raw HTML on stdin
+- output: Markdown by default, or one JSON object with `--json`
+- metadata: includes only metadata present in the provided HTML
+- failure mode: exits non-zero, prints a plain error to stderr, or prints a single error JSON object with `--json`
+
+### `html2md doctor`
+
+- input: no stdin required
+- output: a small readiness report, plain text by default or one JSON object with `--json`
+- purpose: confirms the installed CLI and runtime dependencies are wired correctly
+
+## Fetch vs Convert
+
+These subcommands are intentionally not identical.
+
+- `fetch` is URL-first and optimized for article extraction. It fetches the page, follows redirects, and prefers trafilatura's cleaned content.
+- `convert --stdin` is HTML-first and optimized for terminal workflows. It converts the HTML you already have without requiring a temp file or another network hop.
+- In practice, `fetch` is better for live web pages, while `convert --stdin` is better for saved HTML, piped HTML, and agent-generated HTML snapshots.
+
 ### Example JSON
 
 ```json
@@ -92,6 +126,15 @@ That makes it safe to use in shell pipelines, bots, and agent tools.
   "published_at": "2024-01-02",
   "captured_at": "2026-04-15T22:00:00Z",
   "markdown": "# Example\n\nHello world."
+}
+```
+
+### Example Failure JSON
+
+```json
+{
+  "ok": false,
+  "error": "failed to fetch https://example.invalid: <reason>"
 }
 ```
 
