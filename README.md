@@ -28,6 +28,7 @@ uv run html2md fetch https://example.com --frontmatter
 uv run html2md fetch https://example.com --json
 uv run html2md fetch https://example.com --out article.md
 uv run html2md fetch https://example.com --out-dir output/
+uv run html2md fetch https://example.com --json --out-dir output/
 ```
 
 Use `fetch` when you want the tool to retrieve a live page and clean it up like article content.
@@ -39,6 +40,7 @@ cat page.html | uv run html2md convert --stdin
 cat page.html | uv run html2md convert --stdin --frontmatter
 cat page.html | uv run html2md convert --stdin --json
 cat page.html | uv run html2md convert --stdin --out-dir output/
+cat page.html | uv run html2md convert --stdin --json --out-dir output/
 ```
 
 Use `convert --stdin` when you already have HTML and want a terminal-friendly Markdown conversion without temp files.
@@ -99,6 +101,7 @@ That makes it safe to use in shell pipelines, bots, and agent tools.
 - if `--out-dir DIR` is given, final output is written only to a deterministic file in that directory
 - in plain Markdown mode, writing to disk leaves stdout empty on success
 - in `--json` mode, writing to disk still prints one JSON object to stdout and includes `path`
+- in `--json` mode with `--out` or `--out-dir`, the same JSON payload is both written to disk and printed to stdout
 - normal successful runs do not print log noise to stderr
 
 ## Command Contract
@@ -145,6 +148,31 @@ These subcommands are intentionally not identical.
   "markdown": "# Example\n\nHello world."
 }
 ```
+
+### Example JSON With `--out-dir`
+
+```bash
+uv run html2md fetch https://example.com --json --out-dir output/
+```
+
+stdout:
+
+```json
+{
+  "ok": true,
+  "source_url": "https://example.com",
+  "final_url": "https://example.com",
+  "title": "Example Domain",
+  "captured_at": "2026-04-16T00:44:09Z",
+  "path": "/absolute/path/to/output/example-com.json",
+  "markdown": "This domain is for use in documentation examples without needing permission. Avoid use in operations.\n\nLearn more"
+}
+```
+
+written file:
+
+- `output/example-com.json`
+- contains the same JSON object that was printed to stdout
 
 ### Example Failure JSON
 
