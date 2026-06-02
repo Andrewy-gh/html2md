@@ -14,8 +14,46 @@ Small Unix-style HTML-to-Markdown CLI for terminal workflows and automation.
 ```bash
 uv sync
 uv run html2md doctor
+uv run html2md https://example.com
 uv run html2md fetch https://example.com
 cat page.html | uv run html2md convert --stdin
+```
+
+To run `html2md` from any terminal location, install it on your PATH:
+
+```bash
+uv tool install --editable .
+html2md doctor
+html2md https://example.com
+```
+
+## Fetch Wrappers
+
+The repo includes small Bash and PowerShell wrappers for fetch-style automation:
+
+```bash
+scripts/html2md-fetch.sh https://example.com
+```
+
+```powershell
+.\scripts\html2md-fetch.ps1 https://example.com
+```
+
+Both wrappers default to this command template:
+
+```bash
+html2md ${url}
+```
+
+Set `HTML2MD_FETCH_COMMAND` when the installed command needs a different shape, such as:
+
+```bash
+HTML2MD_FETCH_COMMAND='html2md fetch ${url}' scripts/html2md-fetch.sh https://example.com
+```
+
+```powershell
+$env:HTML2MD_FETCH_COMMAND = 'html2md fetch ${url}'
+.\scripts\html2md-fetch.ps1 https://example.com
 ```
 
 ## CLI
@@ -23,6 +61,7 @@ cat page.html | uv run html2md convert --stdin
 ### Fetch a URL
 
 ```bash
+uv run html2md https://example.com
 uv run html2md fetch https://example.com
 uv run html2md fetch https://example.com --frontmatter
 uv run html2md fetch https://example.com --json

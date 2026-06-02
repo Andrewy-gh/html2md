@@ -36,6 +36,28 @@ def test_fetch_prints_markdown_to_stdout(
     assert captured.err == ""
 
 
+def test_url_argument_defaults_to_fetch(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    seen_url = ""
+
+    def extract(url: str) -> ExtractResult:
+        nonlocal seen_url
+        seen_url = url
+        return sample_result()
+
+    monkeypatch.setattr(cli, "extract_from_url", extract)
+
+    exit_code = cli.main(["https://example.com/start"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert seen_url == "https://example.com/start"
+    assert captured.out == "# Example\n\nHello world.\n"
+    assert captured.err == ""
+
+
 def test_convert_reads_stdin_and_prints_markdown(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],

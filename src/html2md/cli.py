@@ -60,7 +60,8 @@ def add_output_arguments(parser: argparse.ArgumentParser) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(list(argv) if argv is not None else None)
+    raw_args = list(argv) if argv is not None else sys.argv[1:]
+    args = parser.parse_args(normalize_args(raw_args))
 
     try:
         if args.command == "fetch":
@@ -80,6 +81,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return report_error(str(exc), json_mode=getattr(args, "json", False))
 
     return report_error("unknown command", json_mode=getattr(args, "json", False))
+
+
+def normalize_args(argv: list[str]) -> list[str]:
+    if argv and argv[0].startswith(("http://", "https://")):
+        return ["fetch", *argv]
+    return argv
 
 
 def emit_result(result: ExtractResult, args: argparse.Namespace) -> int:
