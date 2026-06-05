@@ -44,9 +44,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def add_output_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--frontmatter",
-        action="store_true",
-        help="Prepend YAML frontmatter to Markdown output",
+        "--nofm",
+        "--nofrontmatter",
+        dest="frontmatter",
+        action="store_false",
+        default=True,
+        help="Omit YAML frontmatter from Markdown output",
     )
     parser.add_argument(
         "--json",
@@ -85,6 +88,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def normalize_args(argv: list[str]) -> list[str]:
     if argv and argv[0].startswith(("http://", "https://")):
+        if len(argv) >= 2 and not argv[1].startswith("-"):
+            return ["fetch", argv[0], "--out", argv[1], *argv[2:]]
         return ["fetch", *argv]
     return argv
 

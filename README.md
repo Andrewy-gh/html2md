@@ -15,6 +15,8 @@ Small Unix-style HTML-to-Markdown CLI for terminal workflows and automation.
 uv sync
 uv run html2md doctor
 uv run html2md https://example.com
+uv run html2md https://example.com article.md
+uv run html2md https://example.com --nofm
 uv run html2md fetch https://example.com
 cat page.html | uv run html2md convert --stdin
 ```
@@ -25,6 +27,8 @@ To run `html2md` from any terminal location, install it on your PATH:
 uv tool install --editable .
 html2md doctor
 html2md https://example.com
+html2md https://example.com article.md
+html2md https://example.com --nofm
 ```
 
 ## Fetch Wrappers
@@ -62,8 +66,12 @@ $env:HTML2MD_FETCH_COMMAND = 'html2md fetch ${url}'
 
 ```bash
 uv run html2md https://example.com
+uv run html2md https://example.com article.md
+uv run html2md https://example.com --nofm
+uv run html2md https://example.com article.md --nofrontmatter
 uv run html2md fetch https://example.com
-uv run html2md fetch https://example.com --frontmatter
+uv run html2md fetch https://example.com --nofrontmatter
+uv run html2md fetch https://example.com --nofm
 uv run html2md fetch https://example.com --json
 uv run html2md fetch https://example.com --out article.md
 uv run html2md fetch https://example.com --out-dir output/
@@ -71,12 +79,14 @@ uv run html2md fetch https://example.com --json --out-dir output/
 ```
 
 Use `fetch` when you want the tool to retrieve a live page and clean it up like article content.
+When using the bare URL shortcut, a second positional argument writes Markdown to that file in the current directory.
 
 ### Convert raw HTML from stdin
 
 ```bash
 cat page.html | uv run html2md convert --stdin
-cat page.html | uv run html2md convert --stdin --frontmatter
+cat page.html | uv run html2md convert --stdin --nofrontmatter
+cat page.html | uv run html2md convert --stdin --nofm
 cat page.html | uv run html2md convert --stdin --json
 cat page.html | uv run html2md convert --stdin --out-dir output/
 cat page.html | uv run html2md convert --stdin --json --out-dir output/
@@ -93,13 +103,25 @@ uv run html2md doctor --json
 
 ## Output Behavior
 
-- Default mode writes Markdown to stdout.
+- Default mode writes Markdown with YAML frontmatter to stdout when metadata is available.
 - `--json` writes one JSON object to stdout.
-- `--frontmatter` prepends YAML frontmatter to Markdown output.
+- `--nofm` or `--nofrontmatter` omits YAML frontmatter from Markdown output.
+- In `--json` mode, the `markdown` field follows the same frontmatter setting.
 - `--out FILE` writes the final output to a specific file.
 - `--out-dir DIR` writes to a deterministic filename based on the URL or available metadata.
 - Errors go to stderr in plain-text mode and return a non-zero exit status.
 - Metadata fields are omitted when unavailable instead of being guessed.
+
+Frontmatter fields:
+
+- `title`
+- `author`
+- `published_at`
+- `captured_at`
+- `source_url`
+- `final_url`
+
+The frontmatter block uses YAML syntax, quotes string values, and omits fields that are not available.
 
 Example JSON fields:
 
@@ -129,8 +151,8 @@ That makes it safe to use in shell pipelines, bots, and agent tools.
 
 | Command | Reads from | Default stdout | `--json` stdout | stderr on failure | Writes files |
 | --- | --- | --- | --- | --- | --- |
-| `html2md fetch <url>` | URL argument | Markdown | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
-| `html2md convert --stdin` | stdin HTML | Markdown | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
+| `html2md fetch <url>` | URL argument | Markdown with frontmatter | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
+| `html2md convert --stdin` | stdin HTML | Markdown with frontmatter | One JSON object | Plain error line | Only with `--out` or `--out-dir` |
 | `html2md doctor` | nothing | Readiness text | One JSON object | Plain error line if command fails | Never |
 
 ### Output Destination Rules
@@ -148,14 +170,14 @@ That makes it safe to use in shell pipelines, bots, and agent tools.
 ### `html2md fetch <url>`
 
 - input: one URL argument
-- output: Markdown by default, or one JSON object with `--json`
+- output: Markdown with frontmatter by default, body-only Markdown with `--nofm`, or one JSON object with `--json`
 - metadata: includes `source_url`, `final_url`, and any metadata trafilatura can extract
 - failure mode: exits non-zero, prints a plain error to stderr, or prints a single error JSON object with `--json`
 
 ### `html2md convert --stdin`
 
 - input: raw HTML on stdin
-- output: Markdown by default, or one JSON object with `--json`
+- output: Markdown with frontmatter by default, body-only Markdown with `--nofm`, or one JSON object with `--json`
 - metadata: includes only metadata present in the provided HTML
 - failure mode: exits non-zero, prints a plain error to stderr, or prints a single error JSON object with `--json`
 
@@ -184,7 +206,7 @@ These subcommands are intentionally not identical.
   "author": "Jane Doe",
   "published_at": "2024-01-02",
   "captured_at": "2026-04-15T22:00:00Z",
-  "markdown": "# Example\n\nHello world."
+  "markdown": "---\ntitle: \"Example\"\nauthor: \"Jane Doe\"\npublished_at: \"2024-01-02\"\ncaptured_at: \"2026-04-15T22:00:00Z\"\nsource_url: \"https://example.com/start\"\nfinal_url: \"https://example.com/posts/hello-world\"\n---\n\n# Example\n\nHello world."
 }
 ```
 
@@ -204,7 +226,7 @@ stdout:
   "title": "Example Domain",
   "captured_at": "2026-04-16T00:44:09Z",
   "path": "/absolute/path/to/output/example-com.json",
-  "markdown": "This domain is for use in documentation examples without needing permission. Avoid use in operations.\n\nLearn more"
+  "markdown": "---\ntitle: \"Example Domain\"\ncaptured_at: \"2026-04-16T00:44:09Z\"\nsource_url: \"https://example.com\"\nfinal_url: \"https://example.com\"\n---\n\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\n\nLearn more"
 }
 ```
 
@@ -225,7 +247,7 @@ written file:
 ### Frontmatter Example
 
 ```bash
-uv run html2md fetch https://example.com --frontmatter
+uv run html2md fetch https://example.com
 ```
 
 ```md
@@ -236,6 +258,16 @@ source_url: "https://example.com"
 final_url: "https://example.com"
 ---
 
+This domain is for use in documentation examples without needing permission.
+```
+
+### No Frontmatter Example
+
+```bash
+uv run html2md fetch https://example.com --nofm
+```
+
+```md
 This domain is for use in documentation examples without needing permission.
 ```
 
